@@ -1,3 +1,5 @@
 venv/
-train.csv
 __pycache__/
+*.pyc
+train.csv
+custom_train.csv
