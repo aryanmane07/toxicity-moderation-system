@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Panel</title>
+    <style>
+        body {
+            background-color: #0b1b3b;
+            color: white;
+            font-family: Arial, sans-serif;
+            padding: 30px;
+        }
+
+        h1 {
+            font-size: 32px;
+        }
+
+        .card {
+            background-color: #1e2f5a;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 10px;
+        }
+
+        .message-box {
+            background-color: #ffffff;
+            color: black;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+
+        .label {
+            color: #00ff99;
+            font-weight: bold;
+        }
+
+        a {
+            color: yellow;
+            font-weight: bold;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Admin Panel</h1>
+
+    <div class="card">
+        <h3>Total Messages: {{ total_messages }}</h3>
+    </div>
+
+    <div class="card">
+        <h3>Banned Users</h3>
+        {% if banned_users %}
+            <ul>
+                {% for user in banned_users %}
+                    <li>{{ user }}</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No banned users</p>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h3>All Messages</h3>
+        <div class="message-box">
+            {% for msg in messages %}
+                <p>
+                    <strong>{{ msg.username }}</strong>
+                    ({{ msg.timestamp }}) :
+                    {{ msg.text }}
+                    <span class="label">[{{ msg.severity }}]</span>
+                </p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <br>
+    <a href="/chat">Back to Chat</a>
+
+</body>
+</html>

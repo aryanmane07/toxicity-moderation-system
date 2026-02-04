@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body style="background:#1e2a44; color:white; font-family:Arial; padding:20px;">
+
+<h2>Welcome {{ username }}</h2>
+
+<a href="/logout" style="color:yellow;">Logout</a> |
+<a href="/clear" style="color:orange;">Clear Chat</a> |
+<a href="/admin" style="color:lightgreen;">Admin</a>
+
+<h3>Total Messages: <span id="totalCount">{{ total }}</span></h3>
+
+<div id="chat-box" style="background:white; color:black; height:350px; overflow:auto; padding:10px; border-radius:8px;">
+    {% for msg in messages %}
+        <p>
+            <b>{{ msg.username }} ({{ msg.timestamp }})</b> :
+            {{ msg.text }}
+            <span style="color:
+                {% if msg.severity == 'Severely Toxic' %}
+                    red
+                {% elif msg.severity == 'Moderate' %}
+                    orange
+                {% elif msg.severity == 'Mild' %}
+                    goldenrod
+                {% else %}
+                    green
+                {% endif %}
+            ">
+                [{{ msg.severity }}]
+            </span>
+        </p>
+    {% endfor %}
+</div>
+
+<br>
+
+<input type="text" id="messageInput" placeholder="Type message" style="width:70%; padding:6px;">
+<button onclick="sendMessage()">Send</button>
+
+<script>
+    var socket = io();
+
+    function sendMessage() {
+        var input = document.getElementById("messageInput");
+        var message = input.value.trim();
+
+        if (message === "") return;
+
+        socket.emit("send_message", {
+            text: message
+        });
+
+        input.value = "";
+    }
+
+    socket.on("receive_message", function(data) {
+
+        var msg = data.message;
+        var chatBox = document.getElementById("chat-box");
+
+        var color = "green";
+        if (msg.severity === "Severely Toxic") color = "red";
+        else if (msg.severity === "Moderate") color = "orange";
+        else if (msg.severity === "Mild") color = "goldenrod";
+
+        chatBox.innerHTML +=
+            "<p><b>" + msg.username +
+            " (" + msg.timestamp + ")</b> : " +
+            msg.text +
+            " <span style='color:" + color + "'>[" +
+            msg.severity + "]</span></p>";
+
+        // 🔥 Live total update
+        document.getElementById("totalCount").innerText = data.total;
+
+        chatBox.scrollTop = chatBox.scrollHeight;
+    });
+</script>
+
+</body>
+</html>
