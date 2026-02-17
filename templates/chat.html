@@ -1,76 +1,94 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Toxicity Detection Model</title>
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <title>Chat</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <style>
-        body { background:#0b1b3b; color:white; font-family:Arial; padding:20px; }
-        #chat-box { background:white; color:black; height:400px; overflow-y:auto; padding:10px; border-radius:8px; margin-bottom:10px; }
-        .msg { margin-bottom:10px; }
-        .label { font-weight:bold; }
-        .severe { color:red; }
-        .moderate { color:orange; }
-        .mild { color:goldenrod; }
-        .non { color:green; }
-        input { padding:8px; width:60%; }
-        button { padding:8px 15px; margin-left:5px; }
-        .topbar { margin-bottom:15px; }
+        body {
+            background: linear-gradient(to bottom right, #0033cc, #001f66);
+            color: white;
+            font-family: serif;
+        }
+
+        #chat-box {
+            background: white;
+            color: black;
+            height: 300px;
+            overflow-y: scroll;
+            padding: 10px;
+        }
     </style>
 </head>
 <body>
 
-<h2>Toxicity Detection Model</h2>
+<h1>Welcome {{ username }}</h1>
 
-<div class="topbar">
-    Logged in as: <b>{{ username }}</b>
-    |
-    <a href="/admin" style="color:lightblue;">Admin Panel</a>
-    |
-    <a href="/logout" style="color:lightblue;">Logout</a>
+<a href="/logout" style="color:yellow;">Logout</a> |
+<a href="/clear" style="color:yellow;">Clear Chat</a> |
+<a href="/admin" style="color:yellow;">Admin</a>
+
+<h3>Total Messages: <span id="total">{{ total }}</span></h3>
+<h3>Online Users: <span id="online">{{ online }}</span></h3>
+
+<div id="chat-box">
+    {% for msg in messages %}
+        <p>
+            <b>{{ msg.user }}</b> ({{ msg.time }}) :
+            {{ msg.text }}
+            {% if msg.label == "Non-toxic" %}
+                <span style="color:green;">[Non-toxic]</span>
+            {% elif msg.label == "Mild" %}
+                <span style="color:orange;">[Mild]</span>
+            {% else %}
+                <span style="color:red;">[Severely Toxic]</span>
+            {% endif %}
+        </p>
+    {% endfor %}
 </div>
 
-<div id="chat-box"></div>
-
-<p>Total Messages: <span id="totalCount">0</span></p>
-
-<input type="text" id="messageInput" placeholder="Type message">
+<input type="text" id="message" placeholder="Type message">
 <button onclick="sendMessage()">Send</button>
 
 <script>
-    const socket = io();
+var socket = io();
 
-    function sendMessage() {
-        const input = document.getElementById("messageInput");
-        const message = input.value.trim();
-        if (message === "") return;
-
-        socket.emit("send_message", { message: message });
+function sendMessage() {
+    var input = document.getElementById("message");
+    if (input.value.trim() !== "") {
+        socket.emit("send_message", {
+            message: input.value
+        });
         input.value = "";
     }
+}
 
-    socket.on("receive_message", function(data) {
-        const chatBox = document.getElementById("chat-box");
+socket.on("receive_message", function(data) {
+    var box = document.getElementById("chat-box");
 
-        let labelClass = "non";
-        if (data.label === "Severely Toxic") labelClass = "severe";
-        else if (data.label === "Moderate") labelClass = "moderate";
-        else if (data.label === "Mild") labelClass = "mild";
+    var color = "green";
+    if (data.label === "Mild") color = "orange";
+    if (data.label === "Severely Toxic") color = "red";
 
-        const msgDiv = document.createElement("div");
-        msgDiv.classList.add("msg");
+    box.innerHTML +=
+        "<p><b>" + data.user + "</b> (" + data.time + ") : "
+        + data.text +
+        " <span style='color:" + color + "'>[" + data.label + "]</span></p>";
 
-        msgDiv.innerHTML =
-            "<b>" + data.username + ":</b> " +
-            data.message +
-            " <span class='label " + labelClass + "'>[" + data.label + "]</span>";
+    box.scrollTop = box.scrollHeight;
+});
 
-        chatBox.appendChild(msgDiv);
+socket.on("update_total", function(total) {
+    document.getElementById("total").innerText = total;
+});
 
-        const totalSpan = document.getElementById("totalCount");
-        totalSpan.innerText = parseInt(totalSpan.innerText) + 1;
+socket.on("update_online", function(count) {
+    document.getElementById("online").innerText = count;
+});
 
-        chatBox.scrollTop = chatBox.scrollHeight;
-    });
+socket.on("banned", function() {
+    alert("You are banned after 5 severely toxic messages.");
+    window.location = "/";
+});
 </script>
 
 </body>
